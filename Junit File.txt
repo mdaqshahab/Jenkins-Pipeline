@@ -1,0 +1,40 @@
+package com.mycompany.app;
+
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+
+public class AppTest{
+        public static void main(String[] args) {
+              Result result = JUnitCore.runClasses(CalculatorTest.class);
+              for (Failure failure : result.getFailures()) {
+                   System.out.println(failure.toString());
+              }
+              System.out.println(result.wasSuccessful());
+        }
+}
+
+package com.mycompany.app;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class CalculatorTest{
+        private static final double DELTA = 1e-15;
+        @Test
+        public void addTest(){
+                assertEquals(7.0,(new Calculator(4.0,3.0)).add(),DELTA);
+        }
+        @Test
+        public void subTest(){
+                assertEquals(1.0,(new Calculator(4.0,3.0)).subtract(),DELTA);
+        }
+        @Test
+        public void MulTest(){
+                assertEquals(12.0,(new Calculator(4.0,3.0)).multiply(),DELTA);
+        }
+        @Test
+        public void DivTest(){
+                assertEquals(2.0,(new Calculator(4.0,2.0)).divide(),DELTA);
+        }
+}

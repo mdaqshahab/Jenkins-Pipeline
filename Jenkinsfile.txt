@@ -1,0 +1,131 @@
+pipeline{
+    
+	agent any
+    
+	stages{
+        
+		stage("Code Checkout"){
+            
+			steps{
+                
+				git '/home/mdaquib/maven_app/my-app'
+            
+				}
+        
+			}
+        
+		stage ('Code Quality Analysis'){
+           
+			steps{
+              
+				script{
+                    
+					scannerhome = tool 'sonar_scanner'
+                
+				}
+                
+				withSonarQubeEnv('Sonar_server') {
+                   
+					sh """
+                       
+						${scannerhome}/bin/sonar-scanner \
+                       	
+						-Dsonar.projectKey=Maven_Pipeline \
+                       
+						-Dsonar.sources=. \
+                       
+						-Dsonar.coverage.jacoco.xmlReportPaths=target/surefire-reports \
+                    
+					"""
+                
+				}
+            
+			}
+        
+		}
+        
+		stage ('Quality Gate'){
+           
+			steps{
+             
+				timeout(time: 1, unit: 'HOURS') {
+                  
+					waitForQualityGate abortPipeline: true
+              
+				}
+            
+			}
+        
+		}
+        
+		stage("Maven Build"){
+            
+			steps{
+                
+				script{
+                    
+					mvnHome = tool name: 'maven', type: 'maven'
+                
+				}
+                
+				sh "${mvnHome}/bin/mvn package "
+            
+			}
+        
+		}
+        
+		stage("Packaging"){
+            
+			steps{
+                
+				script{
+                    
+					mvnHome = tool name: 'maven', type: 'maven'
+                
+				}
+                
+				sh "java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App"
+            
+			}
+        
+		}
+        
+		stage("Binary Repository"){
+            
+			steps{
+                
+				nexusArtifactUploader artifacts: [[artifactId: 'Maven_Pipeline', classifier: '', file: 'target/my-app-1.0-SNAPSHOT.jar', type: 'jar']], 
+                
+				credentialsId: 'f8324bcc-090d-43d7-baff-22dedf5d47f9', 
+                
+				groupId: 'Maven_Pipeline', 
+                
+				nexusUrl: 'localhost:8081', 
+                
+				nexusVersion: 'nexus3', 
+                
+				protocol: 'http', 
+                
+				repository: 'maven-snapshots', 
+                
+				version: '1.0-SNAPSHOT'
+            
+			}
+        
+		}
+    
+	}
+    
+	post {
+        
+		always {
+            
+			archiveArtifacts 'target/**/*.xml'
+            
+			junit 'target/surefire-reports/*.xml'
+        
+		}
+    
+	}
+
+}
